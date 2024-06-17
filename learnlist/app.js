@@ -42,12 +42,24 @@ pool.getConnection((err, connection) => {
   connection.release();
 });
 
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+  console.log("Checking authentication for session: ", req.session); // Debugging line
+  if (req.session.user) {
+    console.log("User is authenticated: ", req.session.user); // Debugging line
+    return next(); // Proceed to the next middleware or route handler
+  }
+  console.log("User not authenticated, redirecting to /signin"); // Debugging line
+  res.redirect("/signin"); // Redirect to signin if not authenticated
+}
+
 // Index route
 app.get("/", (req, res) => {
+  console.log("Index route, session: ", req.session); // Debugging line
   if (req.session.user) {
     return res.redirect("/home"); // Redirect to home if authenticated
   }
-  res.redirect("/signup"); // Redirect to signin if not authenticated
+  res.redirect("/signup"); // Redirect to signup if not authenticated
 });
 
 // Signup page
@@ -59,7 +71,7 @@ app.get("/signup", (req, res) => {
 app.post("/signup", async (req, res) => {
   const { username, password, email } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  
+
   // Check if username or email already exists
   pool.query(
     "SELECT * FROM users WHERE username = ? OR email = ?",
@@ -98,7 +110,7 @@ app.get("/signin", (req, res) => {
 // Signin form submission
 app.post("/signin", async (req, res) => {
   const { username, password } = req.body;
-  
+
   // Fetch user from database
   pool.query(
     "SELECT * FROM users WHERE username = ?",
@@ -121,13 +133,21 @@ app.post("/signin", async (req, res) => {
       }
 
       req.session.user = user;
-      res.redirect("/home");
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).render("error");
+        }
+        console.log("Session set: ", req.session.user); // Debugging line
+        res.redirect("/home");
+      });
     }
   );
 });
 
 // Home page (authenticated)
 app.get("/home", isAuthenticated, (req, res) => {
+  console.log("Home route, user in session: ", req.session.user); // Debugging line
   res.render("home", { user: req.session.user });
 });
 
@@ -141,13 +161,16 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// Middleware to check if user is authenticated
-function isAuthenticated(req, res, next) {
-  if (req.session.user) {
-    return next(); // Proceed to the next middleware or route handler
-  }
-  res.redirect("/signin"); // Redirect to signin if not authenticated
-}
+// All content page (authenticated)
+app.get("/all-content", isAuthenticated, (req, res) => {
+  pool.query("SELECT * FROM resources", (err, results) => {
+    if (err) {
+      console.error("Error fetching resources:", err);
+      return res.status(500).render("error");
+    }
+    res.render("all-content", { resources: results });
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
