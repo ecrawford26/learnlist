@@ -163,12 +163,20 @@ app.get("/logout", (req, res) => {
 
 // all content
 app.get('/all-content', async (req, res) => {
-  const { category, search } = req.query;
+  const { category, resource_type, search, sort } = req.query;
 
   console.log('Selected Category:', category); // Debugging line
+  console.log('Selected Resource Type:', resource_type); // Debugging line
   console.log('Search Keyword:', search); // Debugging line
+  console.log('Sort Order:', sort); // Debugging line
 
-  let query = 'SELECT * FROM resources WHERE 1=1';
+  let query = `
+    SELECT resources.*, categories.name AS category_name, resource_types.name AS resource_type_name 
+    FROM resources 
+    LEFT JOIN categories ON resources.category_id = categories.id
+    LEFT JOIN resource_types ON resources.resource_type_id = resource_types.id
+    WHERE 1=1
+  `;
   let queryParams = [];
 
   if (category) {
@@ -176,9 +184,22 @@ app.get('/all-content', async (req, res) => {
     queryParams.push(category);
   }
 
+  if (resource_type) {
+    query += ' AND resource_type_id = ?';
+    queryParams.push(resource_type);
+  }
+
   if (search) {
-    query += ' AND name LIKE ?';
+    query += ' AND resources.name LIKE ?';
     queryParams.push('%' + search + '%');
+  }
+
+  if (sort) {
+    if (sort === 'asc') {
+      query += ' ORDER BY resources.name ASC';
+    } else if (sort === 'desc') {
+      query += ' ORDER BY resources.name DESC';
+    }
   }
 
   console.log('Query:', query);
@@ -199,14 +220,25 @@ app.get('/all-content', async (req, res) => {
       });
     });
 
+    const resourceTypes = await new Promise((resolve, reject) => {
+      pool.query('SELECT * FROM resource_types', (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
     console.log('Resources:', resources);
     console.log('Categories:', categories);
+    console.log('Resource Types:', resourceTypes);
 
     res.render('all-content', {
       resources,
       categories: Array.isArray(categories) ? categories : [],
+      resourceTypes: Array.isArray(resourceTypes) ? resourceTypes : [],
       selectedCategory: category || '',
-      search: search || ''
+      selectedResourceType: resource_type || '',
+      search: search || '',
+      sort: sort || ''
     });
   } catch (error) {
     console.error('Error retrieving resources:', error);
