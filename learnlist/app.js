@@ -163,16 +163,22 @@ app.get("/logout", (req, res) => {
 
 // all content
 app.get('/all-content', async (req, res) => {
-  const { category } = req.query;
+  const { category, search } = req.query;
 
   console.log('Selected Category:', category); // Debugging line
+  console.log('Search Keyword:', search); // Debugging line
 
-  let query = 'SELECT * FROM resources';
+  let query = 'SELECT * FROM resources WHERE 1=1';
   let queryParams = [];
 
   if (category) {
-    query += ' WHERE category_id = ?';
+    query += ' AND category_id = ?';
     queryParams.push(category);
+  }
+
+  if (search) {
+    query += ' AND name LIKE ?';
+    queryParams.push('%' + search + '%');
   }
 
   console.log('Query:', query);
@@ -199,13 +205,15 @@ app.get('/all-content', async (req, res) => {
     res.render('all-content', {
       resources,
       categories: Array.isArray(categories) ? categories : [],
-      selectedCategory: category || ''
+      selectedCategory: category || '',
+      search: search || ''
     });
   } catch (error) {
     console.error('Error retrieving resources:', error);
     res.status(500).send('Error retrieving resources');
   }
 });
+
 
 // Start server
 const PORT = process.env.PORT || 3000;

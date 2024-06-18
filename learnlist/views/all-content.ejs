@@ -15,7 +15,10 @@
         <option value="<%= category.id %>" <%= category.id == selectedCategory ? 'selected' : '' %>><%= category.name %></option>
       <% }) %>
     </select>
-    
+
+    <label for="search">Search:</label>
+    <input type="text" name="search" id="search" value="<%= search %>">
+
     <button type="submit">Filter</button>
   </form>
   
