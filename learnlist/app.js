@@ -161,15 +161,50 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// All content page (authenticated)
-app.get("/all-content", isAuthenticated, (req, res) => {
-  pool.query("SELECT * FROM resources", (err, results) => {
-    if (err) {
-      console.error("Error fetching resources:", err);
-      return res.status(500).render("error");
-    }
-    res.render("all-content", { resources: results });
-  });
+// all content
+app.get('/all-content', async (req, res) => {
+  const { category } = req.query;
+
+  console.log('Selected Category:', category); // Debugging line
+
+  let query = 'SELECT * FROM resources';
+  let queryParams = [];
+
+  if (category) {
+    query += ' WHERE category_id = ?';
+    queryParams.push(category);
+  }
+
+  console.log('Query:', query);
+  console.log('Query Params:', queryParams);
+
+  try {
+    const resources = await new Promise((resolve, reject) => {
+      pool.query(query, queryParams, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    const categories = await new Promise((resolve, reject) => {
+      pool.query('SELECT * FROM categories', (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    console.log('Resources:', resources);
+    console.log('Categories:', categories);
+
+    res.render('all-content', {
+      resources,
+      categories: Array.isArray(categories) ? categories : [],
+      selectedCategory: category || ''
+    });
+  } catch (error) {
+    console.error('Error retrieving resources:', error);
+    res.status(500).send('Error retrieving resources');
+  }
 });
 
 // Start server
