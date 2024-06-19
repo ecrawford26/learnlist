@@ -1,24 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>All Learnlists</title>
+  <title>All Learnlists</title>
 </head>
 <body>
-    <h1>All Learnlists</h1>
-    <ul>
-        <% learnlists.forEach(learnlist => { %>
-            <li>
-                <a href="/learnlists/<%= learnlist.id %>">
-                    <%= learnlist.name %> - Created by: <%= learnlist.username %> - Average Rating: <%= learnlist.average_rating.toFixed(2) %> Stars
-                </a>
-                <% if (learnlist.user_id === currentUser.id) { %>
-                    <a href="/learnlists/<%= learnlist.id %>/edit">Edit</a>
-                <% } %>
-            </li>
-        <% }) %>
-    </ul>
-    <a href="/learnlists/new">Create a new learnlist</a>
-    <a href="/learnlists">My Learnlists</a>
+  <h1>All Learnlists</h1>
+  <ul>
+    <% if (allLearnlists.length > 0) { %>
+      <% allLearnlists.forEach(learnlist => { %>
+        <li>
+          <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a> by <%= learnlist.username %>
+          (Rating: <%= learnlist.average_rating %> Stars)
+          <% if (currentUser.id === learnlist.user_id) { %>
+            <a href="/learnlists/<%= learnlist.id %>/edit">Edit</a>
+            <form action="/learnlists/<%= learnlist.id %>/delete" method="post" style="display:inline;">
+              <button type="submit">Delete</button>
+            </form>
+          <% } %>
+        </li>
+      <% }) %>
+    <% } else { %>
+      <li>No learnlists found.</li>
+    <% } %>
+  </ul>
 </body>
 </html>

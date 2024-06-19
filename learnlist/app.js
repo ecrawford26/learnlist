@@ -161,7 +161,7 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// all content
+// All content
 app.get('/all-content', async (req, res) => {
   const { category, resource_type, search, sort } = req.query;
 
@@ -256,16 +256,28 @@ app.get('/learnlists', isAuthenticated, (req, res) => {
      WHERE ul.user_id = ?
      GROUP BY ul.id`,
     [userId],
-    (err, results) => {
+    (err, userLearnlists) => {
       if (err) {
-        console.error('Error retrieving learnlists:', err);
-        return res.status(500).render('error', { message: 'Error retrieving learnlists.' });
+        console.error('Error retrieving user learnlists:', err);
+        return res.status(500).render('error', { message: 'Error retrieving user learnlists.' });
       }
-      res.render('learnlists', { learnlists: results });
+      pool.query(
+        `SELECT ul.*, u.username, COALESCE(AVG(r.rating), 0) AS average_rating
+         FROM user_learnlists ul
+         LEFT JOIN users u ON ul.user_id = u.id
+         LEFT JOIN reviews r ON ul.id = r.learnlist_id
+         GROUP BY ul.id`,
+        (err, allLearnlists) => {
+          if (err) {
+            console.error('Error retrieving all learnlists:', err);
+            return res.status(500).render('error', { message: 'Error retrieving all learnlists.' });
+          }
+          res.render('learnlists', { userLearnlists, allLearnlists, currentUser: req.session.user });
+        }
+      );
     }
   );
 });
-
 
 // View form to create a new learnlist
 app.get('/learnlists/new', isAuthenticated, async (req, res) => {
@@ -498,17 +510,55 @@ app.get('/all-learnlists', isAuthenticated, (req, res) => {
      LEFT JOIN users u ON ul.user_id = u.id
      LEFT JOIN reviews r ON ul.id = r.learnlist_id
      GROUP BY ul.id`,
-    (err, results) => {
+    (err, allLearnlists) => {
       if (err) {
         console.error('Error retrieving all learnlists:', err);
         return res.status(500).render('error', { message: 'Error retrieving all learnlists.' });
       }
-      res.render('all-learnlists', { learnlists: results, currentUser: req.session.user });
+      res.render('all-learnlists', { allLearnlists, currentUser: req.session.user });
     }
   );
 });
 
-
+// View a specific learnlist
+app.get('/learnlists/:id', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  pool.query(
+    'SELECT * FROM user_learnlists WHERE id = ?',
+    [learnlistId],
+    (err, results) => {
+      if (err) {
+        console.error('Error retrieving learnlist:', err);
+        return res.status(500).render('error', { message: 'Error retrieving learnlist.' });
+      }
+      if (results.length === 0) {
+        return res.status(404).render('error', { message: 'Learnlist not found.' });
+      }
+      const learnlist = results[0];
+      pool.query(
+        'SELECT * FROM resources INNER JOIN user_learnlist_resources ON resources.id = user_learnlist_resources.resource_id WHERE user_learnlist_resources.user_learnlist_id = ?',
+        [learnlistId],
+        (err, resourceResults) => {
+          if (err) {
+            console.error('Error retrieving resources:', err);
+            return res.status(500).render('error', { message: 'Error retrieving resources.' });
+          }
+          pool.query(
+            'SELECT * FROM reviews WHERE learnlist_id = ?',
+            [learnlistId],
+            (err, reviewResults) => {
+              if (err) {
+                console.error('Error retrieving reviews:', err);
+                return res.status(500).render('error', { message: 'Error retrieving reviews.' });
+              }
+              res.render('learnlist', { learnlist, resources: resourceResults, reviews: reviewResults });
+            }
+          );
+        }
+      );
+    }
+  );
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
