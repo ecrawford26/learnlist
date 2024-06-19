@@ -561,6 +561,56 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   );
 });
 
+// Route for displaying the form to create a new learnlist
+app.get("/learnlists/new", isAuthenticated, async (req, res) => {
+  try {
+    const resources = await new Promise((resolve, reject) => {
+      pool.query("SELECT * FROM resources", (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+    res.render("new-learnlist", { resources });
+  } catch (err) {
+    console.error("Error retrieving resources:", err);
+    res.status(500).render("error", { message: "Error retrieving resources." });
+  }
+});
+
+// Route for handling form submission to create a new learnlist
+app.post("/learnlists", isAuthenticated, (req, res) => {
+  const { name, description, resources } = req.body;
+  const userId = req.session.user.id;
+  pool.query(
+    "INSERT INTO user_learnlists (user_id, name, description) VALUES (?, ?, ?)",
+    [userId, name, description],
+    (err, result) => {
+      if (err) {
+        console.error("Error creating learnlist:", err);
+        return res.status(500).render("error", { message: "Error creating learnlist." });
+      }
+      const learnlistId = result.insertId;
+      if (resources) {
+        const resourceIds = Array.isArray(resources) ? resources : [resources];
+        const learnlistResources = resourceIds.map((resourceId) => [learnlistId, resourceId]);
+        pool.query(
+          "INSERT INTO user_learnlist_resources (user_learnlist_id, resource_id) VALUES ?",
+          [learnlistResources],
+          (err) => {
+            if (err) {
+              console.error("Error adding resources to learnlist:", err);
+              return res.status(500).render("error", { message: "Error adding resources to learnlist." });
+            }
+            res.redirect("/learnlists");
+          }
+        );
+      } else {
+        res.redirect("/learnlists");
+      }
+    }
+  );
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
