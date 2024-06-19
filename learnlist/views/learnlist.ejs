@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Learnlist</title>
+</head>
+<body>
+    <h1><%= learnlist.name %></h1>
+    <p><%= learnlist.description %></p>
+
+    <h2>Resources</h2>
+    <ul>
+        <% resources.forEach(resource => { %>
+            <li><%= resource.name %></li>
+        <% }) %>
+    </ul>
+
+    <h2>Reviews</h2>
+    <ul>
+        <% if (reviews && reviews.length > 0) { %>
+            <% reviews.forEach(review => { %>
+                <li>Rating: <%= review.rating %> Stars</li>
+            <% }) %>
+        <% } else { %>
+            <p>No reviews yet.</p>
+        <% } %>
+    </ul>
+
+    <form action="/learnlists/<%= learnlist.id %>/reviews" method="post">
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" min="1" max="5" required>
+        <button type="submit">Add Rating</button>
+    </form>
+</body>
+</html>
+

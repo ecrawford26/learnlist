@@ -79,7 +79,7 @@ app.post("/signup", async (req, res) => {
     (err, results) => {
       if (err) {
         console.error("Error checking existing user:", err);
-        return res.status(500).render("error");
+        return res.status(500).render("error", { message: "Error checking existing user." });
       }
 
       if (results.length > 0) {
@@ -91,7 +91,7 @@ app.post("/signup", async (req, res) => {
           (err, result) => {
             if (err) {
               console.error("Error inserting new user:", err);
-              return res.status(500).render("error");
+              return res.status(500).render("error", { message: "Error inserting new user." });
             }
             // After successful signup, redirect to signin
             res.redirect("/signin");
@@ -118,7 +118,7 @@ app.post("/signin", async (req, res) => {
     async (err, results) => {
       if (err) {
         console.error("Error fetching user:", err);
-        return res.status(500).render("error");
+        return res.status(500).render("error", { message: "Error fetching user." });
       }
 
       if (results.length === 0) {
@@ -136,7 +136,7 @@ app.post("/signin", async (req, res) => {
       req.session.save((err) => {
         if (err) {
           console.error("Error saving session:", err);
-          return res.status(500).render("error");
+          return res.status(500).render("error", { message: "Error saving session." });
         }
         console.log("Session set: ", req.session.user); // Debugging line
         res.redirect("/home");
@@ -242,9 +242,272 @@ app.get('/all-content', async (req, res) => {
     });
   } catch (error) {
     console.error('Error retrieving resources:', error);
-    res.status(500).send('Error retrieving resources');
+    res.status(500).render('error', { message: 'Error retrieving resources.' });
   }
 });
+
+// View all learnlists of a user
+app.get('/learnlists', isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+  pool.query(
+    `SELECT ul.*, COALESCE(AVG(r.rating), 0) AS average_rating
+     FROM user_learnlists ul
+     LEFT JOIN reviews r ON ul.id = r.learnlist_id
+     WHERE ul.user_id = ?
+     GROUP BY ul.id`,
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.error('Error retrieving learnlists:', err);
+        return res.status(500).render('error', { message: 'Error retrieving learnlists.' });
+      }
+      res.render('learnlists', { learnlists: results });
+    }
+  );
+});
+
+
+// View form to create a new learnlist
+app.get('/learnlists/new', isAuthenticated, async (req, res) => {
+  try {
+    const resources = await new Promise((resolve, reject) => {
+      pool.query('SELECT * FROM resources', (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+    res.render('new-learnlist', { resources });
+  } catch (err) {
+    console.error('Error retrieving resources:', err);
+    res.status(500).render('error', { message: 'Error retrieving resources.' });
+  }
+});
+
+// Handle form submission to create a new learnlist
+app.post('/learnlists', isAuthenticated, (req, res) => {
+  const { name, description, resources } = req.body;
+  const userId = req.session.user.id;
+  pool.query(
+    'INSERT INTO user_learnlists (user_id, name, description) VALUES (?, ?, ?)',
+    [userId, name, description],
+    (err, result) => {
+      if (err) {
+        console.error('Error creating learnlist:', err);
+        return res.status(500).render('error', { message: 'Error creating learnlist.' });
+      }
+      const learnlistId = result.insertId;
+      if (resources) {
+        const resourceIds = Array.isArray(resources) ? resources : [resources];
+        const learnlistResources = resourceIds.map(resourceId => [learnlistId, resourceId]);
+        pool.query(
+          'INSERT INTO user_learnlist_resources (user_learnlist_id, resource_id) VALUES ?',
+          [learnlistResources],
+          (err, result) => {
+            if (err) {
+              console.error('Error adding resources to learnlist:', err);
+              return res.status(500).render('error', { message: 'Error adding resources to learnlist.' });
+            }
+            res.redirect('/learnlists');
+          }
+        );
+      } else {
+        res.redirect('/learnlists');
+      }
+    }
+  );
+});
+
+// View a specific learnlist with rating form
+app.get('/learnlists/:id', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+
+  pool.query(
+    'SELECT * FROM user_learnlists WHERE id = ? AND user_id = ?',
+    [learnlistId, req.session.user.id],
+    (err, learnlistResults) => {
+      if (err) {
+        console.error('Error retrieving learnlist:', err);
+        return res.status(500).render('error', { message: 'Error retrieving learnlist.' });
+      }
+      if (learnlistResults.length === 0) {
+        console.error('Learnlist not found for ID:', learnlistId);
+        return res.status(404).render('error', { message: 'Learnlist not found.' });
+      }
+      const learnlist = learnlistResults[0];
+      console.log('Learnlist:', learnlist);
+
+      pool.query(
+        'SELECT resources.* FROM resources INNER JOIN user_learnlist_resources ON resources.id = user_learnlist_resources.resource_id WHERE user_learnlist_resources.user_learnlist_id = ?',
+        [learnlistId],
+        (err, resourceResults) => {
+          if (err) {
+            console.error('Error retrieving resources:', err);
+            return res.status(500).render('error', { message: 'Error retrieving resources.' });
+          }
+          console.log('Resources:', resourceResults);
+
+          pool.query(
+            'SELECT * FROM reviews WHERE learnlist_id = ?',
+            [learnlistId],
+            (err, reviewResults) => {
+              if (err) {
+                console.error('Error retrieving reviews:', err);
+                return res.status(500).render('error', { message: 'Error retrieving reviews.' });
+              }
+              console.log('Reviews:', reviewResults);
+              
+              const reviews = reviewResults || [];
+              res.render('learnlist', {
+                learnlist,
+                resources: resourceResults,
+                reviews
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// View form to edit a learnlist
+app.get('/learnlists/:id/edit', isAuthenticated, async (req, res) => {
+  const learnlistId = req.params.id;
+  try {
+    const learnlist = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM user_learnlists WHERE id = ? AND user_id = ?',
+        [learnlistId, req.session.user.id],
+        (err, results) => {
+          if (err) reject(err);
+          else resolve(results[0]);
+        }
+      );
+    });
+
+    const resources = await new Promise((resolve, reject) => {
+      pool.query('SELECT * FROM resources', (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    const selectedResources = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT resource_id FROM user_learnlist_resources WHERE user_learnlist_id = ?',
+        [learnlistId],
+        (err, results) => {
+          if (err) reject(err);
+          else resolve(results.map(row => row.resource_id));
+        }
+      );
+    });
+
+    res.render('edit-learnlist', { learnlist, resources, selectedResources });
+  } catch (err) {
+    console.error('Error retrieving learnlist or resources:', err);
+    res.status(500).render('error', { message: 'Error retrieving learnlist or resources.' });
+  }
+});
+
+// Handle form submission to update a learnlist
+app.post('/learnlists/:id', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  const { name, description, resources } = req.body;
+  pool.query(
+    'UPDATE user_learnlists SET name = ?, description = ? WHERE id = ? AND user_id = ?',
+    [name, description, learnlistId, req.session.user.id],
+    (err, result) => {
+      if (err) {
+        console.error('Error updating learnlist:', err);
+        return res.status(500).render('error', { message: 'Error updating learnlist.' });
+      }
+
+      pool.query(
+        'DELETE FROM user_learnlist_resources WHERE user_learnlist_id = ?',
+        [learnlistId],
+        (err, result) => {
+          if (err) {
+            console.error('Error clearing existing learnlist resources:', err);
+            return res.status(500).render('error', { message: 'Error clearing existing learnlist resources.' });
+          }
+
+          if (resources) {
+            const resourceIds = Array.isArray(resources) ? resources : [resources];
+            const learnlistResources = resourceIds.map(resourceId => [learnlistId, resourceId]);
+            pool.query(
+              'INSERT INTO user_learnlist_resources (user_learnlist_id, resource_id) VALUES ?',
+              [learnlistResources],
+              (err, result) => {
+                if (err) {
+                  console.error('Error adding resources to learnlist:', err);
+                  return res.status(500).render('error', { message: 'Error adding resources to learnlist.' });
+                }
+                res.redirect('/learnlists/' + learnlistId);
+              }
+            );
+          } else {
+            res.redirect('/learnlists/' + learnlistId);
+          }
+        }
+      );
+    }
+  );
+});
+
+// Handle deletion of a learnlist
+app.post('/learnlists/:id/delete', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  pool.query(
+    'DELETE FROM user_learnlists WHERE id = ? AND user_id = ?',
+    [learnlistId, req.session.user.id],
+    (err, result) => {
+      if (err) {
+        console.error('Error deleting learnlist:', err);
+        return res.status(500).render('error', { message: 'Error deleting learnlist.' });
+      }
+      res.redirect('/learnlists');
+    }
+  );
+});
+
+// Add a review for a learnlist
+app.post('/learnlists/:id/reviews', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  const { rating } = req.body;
+  const userId = req.session.user.id;
+
+  pool.query(
+    'INSERT INTO reviews (user_id, learnlist_id, rating) VALUES (?, ?, ?)',
+    [userId, learnlistId, rating],
+    (err, result) => {
+      if (err) {
+        console.error('Error adding rating:', err);
+        return res.status(500).render('error', { message: 'Error adding rating.' });
+      }
+      res.redirect('/learnlists/' + learnlistId);
+    }
+  );
+});
+
+// View all learnlists of all users
+app.get('/all-learnlists', isAuthenticated, (req, res) => {
+  pool.query(
+    `SELECT ul.*, u.username, COALESCE(AVG(r.rating), 0) AS average_rating
+     FROM user_learnlists ul
+     LEFT JOIN users u ON ul.user_id = u.id
+     LEFT JOIN reviews r ON ul.id = r.learnlist_id
+     GROUP BY ul.id`,
+    (err, results) => {
+      if (err) {
+        console.error('Error retrieving all learnlists:', err);
+        return res.status(500).render('error', { message: 'Error retrieving all learnlists.' });
+      }
+      res.render('all-learnlists', { learnlists: results, currentUser: req.session.user });
+    }
+  );
+});
+
 
 
 // Start server
@@ -252,4 +515,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-

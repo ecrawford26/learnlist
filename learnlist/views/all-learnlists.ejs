@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Learnlists</title>
+</head>
+<body>
+    <h1>All Learnlists</h1>
+    <ul>
+        <% learnlists.forEach(learnlist => { %>
+            <li>
+                <a href="/learnlists/<%= learnlist.id %>">
+                    <%= learnlist.name %> - Created by: <%= learnlist.username %> - Average Rating: <%= learnlist.average_rating.toFixed(2) %> Stars
+                </a>
+                <% if (learnlist.user_id === currentUser.id) { %>
+                    <a href="/learnlists/<%= learnlist.id %>/edit">Edit</a>
+                <% } %>
+            </li>
+        <% }) %>
+    </ul>
+    <a href="/learnlists/new">Create a new learnlist</a>
+    <a href="/learnlists">My Learnlists</a>
+</body>
+</html>
