@@ -161,7 +161,7 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// All content
+// all content
 app.get('/all-content', async (req, res) => {
   const { category, resource_type, search, sort } = req.query;
 
@@ -258,9 +258,10 @@ app.get('/learnlists', isAuthenticated, (req, res) => {
     [userId],
     (err, userLearnlists) => {
       if (err) {
-        console.error('Error retrieving user learnlists:', err);
-        return res.status(500).render('error', { message: 'Error retrieving user learnlists.' });
+        console.error('Error retrieving learnlists:', err);
+        return res.status(500).render('error', { message: 'Error retrieving learnlists.' });
       }
+
       pool.query(
         `SELECT ul.*, u.username, COALESCE(AVG(r.rating), 0) AS average_rating
          FROM user_learnlists ul
@@ -334,8 +335,8 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
 
   pool.query(
-    'SELECT * FROM user_learnlists WHERE id = ? AND user_id = ?',
-    [learnlistId, req.session.user.id],
+    'SELECT ul.*, u.username FROM user_learnlists ul LEFT JOIN users u ON ul.user_id = u.id WHERE ul.id = ?',
+    [learnlistId],
     (err, learnlistResults) => {
       if (err) {
         console.error('Error retrieving learnlist:', err);
@@ -510,12 +511,12 @@ app.get('/all-learnlists', isAuthenticated, (req, res) => {
      LEFT JOIN users u ON ul.user_id = u.id
      LEFT JOIN reviews r ON ul.id = r.learnlist_id
      GROUP BY ul.id`,
-    (err, allLearnlists) => {
+    (err, results) => {
       if (err) {
         console.error('Error retrieving all learnlists:', err);
         return res.status(500).render('error', { message: 'Error retrieving all learnlists.' });
       }
-      res.render('all-learnlists', { allLearnlists, currentUser: req.session.user });
+      res.render('all-learnlists', { allLearnlists: results, currentUser: req.session.user });
     }
   );
 });
@@ -524,7 +525,7 @@ app.get('/all-learnlists', isAuthenticated, (req, res) => {
 app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   pool.query(
-    'SELECT * FROM user_learnlists WHERE id = ?',
+    'SELECT ul.*, u.username FROM user_learnlists ul LEFT JOIN users u ON ul.user_id = u.id WHERE ul.id = ?',
     [learnlistId],
     (err, results) => {
       if (err) {
