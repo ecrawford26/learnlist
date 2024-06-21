@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favourite Learnlists</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h1>Your Favourite Learnlists</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Created By</th>
+                <th>Average Rating</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (favouriteLearnlists.length > 0) { %>
+                <% favouriteLearnlists.forEach(learnlist => { %>
+                    <tr>
+                        <td><%= learnlist.name %></td>
+                        <td><%= learnlist.description %></td>
+                        <td><%= learnlist.username %></td>
+                        <td><%= learnlist.average_rating %></td>
+                        <td>
+                            <a href="/learnlists/<%= learnlist.id %>">View</a>
+                            <form action="/learnlists/<%= learnlist.id %>/unfavourite" method="POST" style="display:inline;">
+                                <button type="submit">Remove from Favourites</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="5">You have no favourite learnlists.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+    <a href="/home">Back to Home</a>
+</body>
+</html>

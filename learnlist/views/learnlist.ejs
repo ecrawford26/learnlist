@@ -7,6 +7,16 @@
 <body>
     <h1><%= learnlist.name %></h1>
     <p><%= learnlist.description %></p>
+    
+    <% if (userFavorites.includes(learnlist.id)) { %>
+        <form action="/learnlists/<%= learnlist.id %>/unfavorite" method="POST">
+            <button type="submit">Remove from Favorites</button>
+        </form>
+    <% } else { %>
+        <form action="/learnlists/<%= learnlist.id %>/favorite" method="POST">
+            <button type="submit">Add to Favorites</button>
+        </form>
+    <% } %>
 
     <h2>Resources</h2>
     <ul>

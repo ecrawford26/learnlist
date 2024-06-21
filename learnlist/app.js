@@ -161,14 +161,9 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// all content
-app.get('/all-content', async (req, res) => {
+// All content
+app.get("/all-content", async (req, res) => {
   const { category, resource_type, search, sort } = req.query;
-
-  console.log('Selected Category:', category); // Debugging line
-  console.log('Selected Resource Type:', resource_type); // Debugging line
-  console.log('Search Keyword:', search); // Debugging line
-  console.log('Sort Order:', sort); // Debugging line
 
   let query = `
     SELECT resources.*, categories.name AS category_name, resource_types.name AS resource_type_name 
@@ -180,30 +175,27 @@ app.get('/all-content', async (req, res) => {
   let queryParams = [];
 
   if (category) {
-    query += ' AND category_id = ?';
+    query += " AND category_id = ?";
     queryParams.push(category);
   }
 
   if (resource_type) {
-    query += ' AND resource_type_id = ?';
+    query += " AND resource_type_id = ?";
     queryParams.push(resource_type);
   }
 
   if (search) {
-    query += ' AND resources.name LIKE ?';
-    queryParams.push('%' + search + '%');
+    query += " AND resources.name LIKE ?";
+    queryParams.push("%" + search + "%");
   }
 
   if (sort) {
-    if (sort === 'asc') {
-      query += ' ORDER BY resources.name ASC';
-    } else if (sort === 'desc') {
-      query += ' ORDER BY resources.name DESC';
+    if (sort === "asc") {
+      query += " ORDER BY resources.name ASC";
+    } else if (sort === "desc") {
+      query += " ORDER BY resources.name DESC";
     }
   }
-
-  console.log('Query:', query);
-  console.log('Query Params:', queryParams);
 
   try {
     const resources = await new Promise((resolve, reject) => {
@@ -214,35 +206,31 @@ app.get('/all-content', async (req, res) => {
     });
 
     const categories = await new Promise((resolve, reject) => {
-      pool.query('SELECT * FROM categories', (err, results) => {
+      pool.query("SELECT * FROM categories", (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     });
 
     const resourceTypes = await new Promise((resolve, reject) => {
-      pool.query('SELECT * FROM resource_types', (err, results) => {
+      pool.query("SELECT * FROM resource_types", (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     });
 
-    console.log('Resources:', resources);
-    console.log('Categories:', categories);
-    console.log('Resource Types:', resourceTypes);
-
-    res.render('all-content', {
+    res.render("all-content", {
       resources,
       categories: Array.isArray(categories) ? categories : [],
       resourceTypes: Array.isArray(resourceTypes) ? resourceTypes : [],
-      selectedCategory: category || '',
-      selectedResourceType: resource_type || '',
-      search: search || '',
-      sort: sort || ''
+      selectedCategory: category || "",
+      selectedResourceType: resource_type || "",
+      search: search || "",
+      sort: sort || ""
     });
   } catch (error) {
-    console.error('Error retrieving resources:', error);
-    res.status(500).render('error', { message: 'Error retrieving resources.' });
+    console.error("Error retrieving resources:", error);
+    res.status(500).render("error", { message: "Error retrieving resources." });
   }
 });
 
@@ -333,21 +321,20 @@ app.post('/learnlists', isAuthenticated, (req, res) => {
 // View a specific learnlist with rating form
 app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
+  const userId = req.session.user.id;
 
   pool.query(
     'SELECT ul.*, u.username FROM user_learnlists ul LEFT JOIN users u ON ul.user_id = u.id WHERE ul.id = ?',
     [learnlistId],
-    (err, learnlistResults) => {
+    (err, results) => {
       if (err) {
         console.error('Error retrieving learnlist:', err);
         return res.status(500).render('error', { message: 'Error retrieving learnlist.' });
       }
-      if (learnlistResults.length === 0) {
-        console.error('Learnlist not found for ID:', learnlistId);
+      if (results.length === 0) {
         return res.status(404).render('error', { message: 'Learnlist not found.' });
       }
-      const learnlist = learnlistResults[0];
-      console.log('Learnlist:', learnlist);
+      const learnlist = results[0];
 
       pool.query(
         'SELECT resources.* FROM resources INNER JOIN user_learnlist_resources ON resources.id = user_learnlist_resources.resource_id WHERE user_learnlist_resources.user_learnlist_id = ?',
@@ -357,7 +344,6 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
             console.error('Error retrieving resources:', err);
             return res.status(500).render('error', { message: 'Error retrieving resources.' });
           }
-          console.log('Resources:', resourceResults);
 
           pool.query(
             'SELECT * FROM reviews WHERE learnlist_id = ?',
@@ -367,14 +353,26 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
                 console.error('Error retrieving reviews:', err);
                 return res.status(500).render('error', { message: 'Error retrieving reviews.' });
               }
-              console.log('Reviews:', reviewResults);
-              
-              const reviews = reviewResults || [];
-              res.render('learnlist', {
-                learnlist,
-                resources: resourceResults,
-                reviews
-              });
+
+              pool.query(
+                'SELECT learnlist_id FROM user_favorites WHERE user_id = ?',
+                [userId],
+                (err, favoriteResults) => {
+                  if (err) {
+                    console.error('Error retrieving user favorites:', err);
+                    return res.status(500).render('error', { message: 'Error retrieving user favorites.' });
+                  }
+
+                  const userFavorites = favoriteResults.map(fav => fav.learnlist_id);
+
+                  res.render('learnlist', {
+                    learnlist,
+                    resources: resourceResults,
+                    reviews: reviewResults,
+                    userFavorites
+                  });
+                }
+              );
             }
           );
         }
@@ -521,46 +519,6 @@ app.get('/all-learnlists', isAuthenticated, (req, res) => {
   );
 });
 
-// View a specific learnlist
-app.get('/learnlists/:id', isAuthenticated, (req, res) => {
-  const learnlistId = req.params.id;
-  pool.query(
-    'SELECT ul.*, u.username FROM user_learnlists ul LEFT JOIN users u ON ul.user_id = u.id WHERE ul.id = ?',
-    [learnlistId],
-    (err, results) => {
-      if (err) {
-        console.error('Error retrieving learnlist:', err);
-        return res.status(500).render('error', { message: 'Error retrieving learnlist.' });
-      }
-      if (results.length === 0) {
-        return res.status(404).render('error', { message: 'Learnlist not found.' });
-      }
-      const learnlist = results[0];
-      pool.query(
-        'SELECT * FROM resources INNER JOIN user_learnlist_resources ON resources.id = user_learnlist_resources.resource_id WHERE user_learnlist_resources.user_learnlist_id = ?',
-        [learnlistId],
-        (err, resourceResults) => {
-          if (err) {
-            console.error('Error retrieving resources:', err);
-            return res.status(500).render('error', { message: 'Error retrieving resources.' });
-          }
-          pool.query(
-            'SELECT * FROM reviews WHERE learnlist_id = ?',
-            [learnlistId],
-            (err, reviewResults) => {
-              if (err) {
-                console.error('Error retrieving reviews:', err);
-                return res.status(500).render('error', { message: 'Error retrieving reviews.' });
-              }
-              res.render('learnlist', { learnlist, resources: resourceResults, reviews: reviewResults });
-            }
-          );
-        }
-      );
-    }
-  );
-});
-
 // Route for displaying the form to create a new learnlist
 app.get("/learnlists/new", isAuthenticated, async (req, res) => {
   try {
@@ -607,6 +565,64 @@ app.post("/learnlists", isAuthenticated, (req, res) => {
       } else {
         res.redirect("/learnlists");
       }
+    }
+  );
+});
+
+// Add a learnlist to favourites
+app.post('/learnlists/:id/favourite', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  const userId = req.session.user.id;
+
+  pool.query(
+    'INSERT INTO user_favourites (user_id, learnlist_id) VALUES (?, ?)',
+    [userId, learnlistId],
+    (err) => {
+      if (err) {
+        console.error('Error adding favourite learnlist:', err);
+        return res.status(500).render('error', { message: 'Error adding favourite learnlist.' });
+      }
+      res.redirect(`/learnlists/${learnlistId}`);
+    }
+  );
+});
+
+// Remove a learnlist from favourites
+app.post('/learnlists/:id/unfavourite', isAuthenticated, (req, res) => {
+  const learnlistId = req.params.id;
+  const userId = req.session.user.id;
+
+  pool.query(
+    'DELETE FROM user_favourites WHERE user_id = ? AND learnlist_id = ?',
+    [userId, learnlistId],
+    (err) => {
+      if (err) {
+        console.error('Error removing favourite learnlist:', err);
+        return res.status(500).render('error', { message: 'Error removing favourite learnlist.' });
+      }
+      res.redirect(`/learnlists/${learnlistId}`);
+    }
+  );
+});
+
+app.get('/favourites', isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+
+  pool.query(
+    `SELECT ul.*, u.username, COALESCE(AVG(r.rating), 0) AS average_rating
+     FROM user_favourites uf
+     JOIN user_learnlists ul ON uf.learnlist_id = ul.id
+     JOIN users u ON ul.user_id = u.id
+     LEFT JOIN reviews r ON ul.id = r.learnlist_id
+     WHERE uf.user_id = ?
+     GROUP BY ul.id`,
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.error('Error retrieving favourite learnlists:', err);
+        return res.status(500).render('error', { message: 'Error retrieving favourite learnlists.' });
+      }
+      res.render('favourites', { favouriteLearnlists: results });
     }
   );
 });
