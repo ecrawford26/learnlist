@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Learnlist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= learnlist.name %></title>
 </head>
 <body>
     <h1><%= learnlist.name %></h1>
     <p><%= learnlist.description %></p>
-    
+
     <% if (userFavorites.includes(learnlist.id)) { %>
-        <form action="/learnlists/<%= learnlist.id %>/unfavorite" method="POST">
+        <form action="/learnlists/<%= learnlist.id %>/unfavourite" method="POST">
             <button type="submit">Remove from Favorites</button>
         </form>
     <% } else { %>
-        <form action="/learnlists/<%= learnlist.id %>/favorite" method="POST">
+        <form action="/learnlists/<%= learnlist.id %>/favourite" method="POST">
             <button type="submit">Add to Favorites</button>
         </form>
     <% } %>
@@ -27,20 +28,10 @@
 
     <h2>Reviews</h2>
     <ul>
-        <% if (reviews && reviews.length > 0) { %>
-            <% reviews.forEach(review => { %>
-                <li>Rating: <%= review.rating %> Stars</li>
-            <% }) %>
-        <% } else { %>
-            <p>No reviews yet.</p>
-        <% } %>
+        <% reviews.forEach(review => { %>
+            <li>Rating: <%= review.rating %></li>
+        <% }) %>
     </ul>
-
-    <form action="/learnlists/<%= learnlist.id %>/reviews" method="post">
-        <label for="rating">Rating:</label>
-        <input type="number" id="rating" name="rating" min="1" max="5" required>
-        <button type="submit">Add Rating</button>
-    </form>
 </body>
 </html>
 

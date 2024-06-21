@@ -355,15 +355,15 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
               }
 
               pool.query(
-                'SELECT learnlist_id FROM user_favorites WHERE user_id = ?',
+                'SELECT learnlist_id FROM user_favourites WHERE user_id = ?',
                 [userId],
-                (err, favoriteResults) => {
+                (err, favouriteResults) => {
                   if (err) {
-                    console.error('Error retrieving user favorites:', err);
-                    return res.status(500).render('error', { message: 'Error retrieving user favorites.' });
+                    console.error('Error retrieving user favourites:', err);
+                    return res.status(500).render('error', { message: 'Error retrieving user favourites.' });
                   }
 
-                  const userFavorites = favoriteResults.map(fav => fav.learnlist_id);
+                  const userFavorites = favouriteResults.map(fav => fav.learnlist_id);
 
                   res.render('learnlist', {
                     learnlist,
