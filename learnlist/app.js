@@ -501,6 +501,7 @@ app.post('/learnlists/:id/reviews', isAuthenticated, (req, res) => {
   );
 });
 
+
 // View all learnlists of all users
 app.get('/all-learnlists', isAuthenticated, (req, res) => {
   pool.query(
@@ -630,5 +631,5 @@ app.get('/favourites', isAuthenticated, (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}/all-content`);
 });
