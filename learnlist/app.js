@@ -469,18 +469,35 @@ app.post('/learnlists/:id', isAuthenticated, (req, res) => {
 // Handle deletion of a learnlist
 app.post('/learnlists/:id/delete', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
+  const userId = req.session.user.id;
+  
+  // First, delete references in the user_favourites table
   pool.query(
-    'DELETE FROM user_learnlists WHERE id = ? AND user_id = ?',
-    [learnlistId, req.session.user.id],
+    'DELETE FROM user_favourites WHERE learnlist_id = ?',
+    [learnlistId],
     (err, result) => {
       if (err) {
-        console.error('Error deleting learnlist:', err);
-        return res.status(500).render('error', { message: 'Error deleting learnlist.' });
+        console.error('Error deleting from user_favourites:', err);
+        return res.status(500).render('error', { message: 'Error deleting references in user_favourites.' });
       }
-      res.redirect('/learnlists');
+      
+      // Now, delete the learnlist
+      pool.query(
+        'DELETE FROM user_learnlists WHERE id = ? AND user_id = ?',
+        [learnlistId, userId],
+        (err, result) => {
+          if (err) {
+            console.error('Error deleting learnlist:', err);
+            return res.status(500).render('error', { message: 'Error deleting learnlist.' });
+          }
+          res.redirect('/learnlists');
+        }
+      );
     }
   );
 });
+
+
 
 // Add a review for a learnlist
 app.post('/learnlists/:id/reviews', isAuthenticated, (req, res) => {

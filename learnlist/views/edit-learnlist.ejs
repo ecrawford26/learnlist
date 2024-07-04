@@ -1,24 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Edit Learnlist</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Learnlist</title>
+  <link rel="stylesheet" href="/styles2.css">
 </head>
 <body>
+  <div class="container">
     <h1>Edit Learnlist</h1>
     <form action="/learnlists/<%= learnlist.id %>" method="post">
+      <div class="form-group">
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" value="<%= learnlist.name %>" required>
+        <input type="text" id="name" name="name" class="form-control" value="<%= learnlist.name %>" required>
+      </div>
+      <div class="form-group">
         <label for="description">Description:</label>
-        <textarea id="description" name="description"><%= learnlist.description %></textarea>
-        <h2>Select Resources:</h2>
-        <% resources.forEach(resource => { %>
-            <div>
-                <input type="checkbox" id="resource-<%= resource.id %>" name="resources" value="<%= resource.id %>" <%= selectedResources.includes(resource.id) ? 'checked' : '' %>>
-                <label for="resource-<%= resource.id %>"><%= resource.name %></label>
-            </div>
-        <% }) %>
-        <button type="submit">Update</button>
+        <textarea id="description" name="description" class="form-control"><%= learnlist.description %></textarea>
+      </div>
+      <h2>Select Resources:</h2>
+      <% resources.forEach(resource => { %>
+        <div class="form-check">
+          <input type="checkbox" id="resource-<%= resource.id %>" name="resources" value="<%= resource.id %>" class="form-check-input" <%= selectedResources.includes(resource.id) ? 'checked' : '' %>>
+          <label for="resource-<%= resource.id %>" class="form-check-label"><%= resource.name %></label>
+        </div>
+      <% }) %>
+      <button type="submit" class="btn btn-primary mt-3">Update</button>
     </form>
+  </div>
 </body>
 </html>
+

@@ -2,15 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <h1>Welcome, <%= user.username %></h1>
-    <a href="/all-content">All Content</a>
-    <a href="/learnlists">My Learnlists</a>
-    <a href="/all-learnlists">View All Learnlists</a>
-    <a href="/learnlists/new">Create New Learnlist</a> <!-- Corrected link -->
-    <li><a href="/favourites">Favourite Learnlists</a></li>
-    <a href="/logout">Logout</a>
+    <div class="container mt-5">
+        <h1 class="mb-4">Welcome, <%= user.username %></h1>
+        <nav>
+            <ul>
+                <li><a href="/all-content" class="btn btn-primary btn-block">All Content</a></li>
+                <li><a href="/learnlists" class="btn btn-primary btn-block">My Learnlists</a></li>
+                <li><a href="/all-learnlists" class="btn btn-primary btn-block">View All Learnlists</a></li>
+                <li><a href="/learnlists/new" class="btn btn-primary btn-block">Create New Learnlist</a></li>
+                <li><a href="/favourites" class="btn btn-primary btn-block">Favourite Learnlists</a></li>
+                <li><a href="/logout" class="btn btn-danger btn-block">Logout</a></li>
+            </ul>
+        </nav>
+    </div>
 </body>
 </html>
+
+
+
+

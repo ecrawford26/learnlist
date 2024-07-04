@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Favorite Learnlists</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Favorite Learnlists</title>
+  <link rel="stylesheet" href="/styles2.css">
 </head>
 <body>
+  <div class="container">
     <h1>My Favorite Learnlists</h1>
     <ul>
+      <% if (favouriteLearnlists.length > 0) { %>
         <% favouriteLearnlists.forEach(learnlist => { %>
-            <li>
-                <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a>
-                by <%= learnlist.username %>
-                (Average Rating: <%= learnlist.average_rating %>)
-            </li>
+          <li>
+            <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a>
+            by <%= learnlist.username %>
+            (Average Rating: <%= learnlist.average_rating %>)
+          </li>
         <% }) %>
+      <% } else { %>
+        <li>No favourite learnlists found.</li>
+      <% } %>
     </ul>
-    <a
+    <a href="/all-content" class="btn btn-primary mt-3">Back to All Content</a>
+  </div>
+</body>
+</html>

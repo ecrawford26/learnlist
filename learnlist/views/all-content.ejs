@@ -2,7 +2,8 @@
 <html>
 <head>
   <title>All Content</title>
-  <link rel="stylesheet" href="/path/to/your/css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const categorySelect = document.getElementById("category");
@@ -22,67 +23,82 @@
   </script>
 </head>
 <body>
-  <h1>All Content</h1>
-  
-  <nav>
-    <a href="/signin">Sign In</a> | 
-    <a href="/signup">Sign Up</a>
-  </nav>
+  <div class="container container-lg mt-5">
+    <h1 class="mb-4">All Content</h1>
+    <a href="/home" class="btn btn-secondary mb-3">Back to Home</a> <!-- Added mb-3 for spacing -->
+    <nav class="mb-4">
+      <div class="row">
+        <div class="col-md-6">
+          <a href="/signin" class="btn btn-primary btn-block">Sign In</a>
+        </div>
+        <div class="col-md-6">
+          <a href="/signup" class="btn btn-secondary btn-block">Sign Up</a>
+        </div>
+      </div>
+    </nav>
 
-  <form id="filterForm" method="GET" action="/all-content">
-    <label for="category">Category:</label>
-    <select name="category" id="category">
-      <option value="">All</option>
-      <% categories.forEach(category => { %>
-        <option value="<%= category.id %>" <%= category.id == selectedCategory ? 'selected' : '' %>><%= category.name %></option>
-      <% }) %>
-    </select>
-
-    <label for="resource_type">Resource Type:</label>
-    <select name="resource_type" id="resource_type">
-      <option value="">All</option>
-      <% resourceTypes.forEach(type => { %>
-        <option value="<%= type.id %>" <%= type.id == selectedResourceType ? 'selected' : '' %>><%= type.name %></option>
-      <% }) %>
-    </select>
-
-    <label for="sort">Sort:</label>
-    <select name="sort" id="sort">
-      <option value="">Default</option>
-      <option value="asc" <%= sort === 'asc' ? 'selected' : '' %>>Alphabetical A-Z</option>
-      <option value="desc" <%= sort === 'desc' ? 'selected' : '' %>>Alphabetical Z-A</option>
-    </select>
-
-    <label for="search">Search:</label>
-    <input type="text" name="search" id="search" value="<%= search %>">
-
-    <button type="submit">Search</button>
-  </form>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Link</th>
-        <th>Description</th>
-        <th>Category</th>
-        <th>Resource Type</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% resources.forEach(resource => { %>
+    <form id="filterForm" method="GET" action="/all-content" class="mb-4">
+      <div class="form-row">
+        <div class="form-group col-md-3">
+          <label for="category">Category:</label>
+          <select name="category" id="category" class="form-control">
+            <option value="">All</option>
+            <% categories.forEach(category => { %>
+              <option value="<%= category.id %>" <%= category.id == selectedCategory ? 'selected' : '' %>><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div class="form-group col-md-3">
+          <label for="resource_type">Resource Type:</label>
+          <select name="resource_type" id="resource_type" class="form-control">
+            <option value="">All</option>
+            <% resourceTypes.forEach(type => { %>
+              <option value="<%= type.id %>" <%= type.id == selectedResourceType ? 'selected' : '' %>><%= type.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div class="form-group col-md-3">
+          <label for="sort">Sort:</label>
+          <select name="sort" id="sort" class="form-control">
+            <option value="">Default</option>
+            <option value="asc" <%= sort === 'asc' ? 'selected' : '' %>>Alphabetical A-Z</option>
+            <option value="desc" <%= sort === 'desc' ? 'selected' : '' %>>Alphabetical Z-A</option>
+          </select>
+        </div>
+        
+        <div class="form-group col-md-3">
+          <label for="search">Search:</label>
+          <input type="text" name="search" id="search" value="<%= search %>" class="form-control">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    
+    <table class="table table-bordered table-hover">
+      <thead class="thead-dark">
         <tr>
-          <td><%= resource.name %></td>
-          <td><a href="<%= resource.URL %>"><%= resource.URL %></a></td>
-          <td><%= resource.details %></td>
-          <td><%= resource.category_name %></td>
-          <td><%= resource.resource_type_name %></td>
+          <th>Title</th>
+          <th>Link</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Resource Type</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  
-  <a href="/home">Back to Home</a>
+      </thead>
+      <tbody>
+        <% resources.forEach(resource => { %>
+          <tr>
+            <td><%= resource.name %></td>
+            <td><a href="<%= resource.URL %>"><%= resource.URL %></a></td>
+            <td><%= resource.details %></td>
+            <td><%= resource.category_name %></td>
+            <td><%= resource.resource_type_name %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <a href="/home" class="btn btn-secondary">Back to Home</a>
+  </div>
 </body>
 </html>
-

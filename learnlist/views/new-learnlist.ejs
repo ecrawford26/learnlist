@@ -1,29 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Create Learnlist</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Learnlist</title>
+  <link rel="stylesheet" href="/styles2.css">
 </head>
 <body>
+  <div class="container">
     <h1>Create Learnlist</h1>
     <form action="/learnlists" method="post">
+      <div class="form-group">
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
+        <input type="text" id="name" name="name" class="form-control" required>
+      </div>
+      <div class="form-group">
         <label for="description">Description:</label>
-        <textarea id="description" name="description"></textarea>
-        <h2>Select Resources:</h2>
-        <% if (resources && resources.length > 0) { %>
-            <% resources.forEach(resource => { %>
-                <div>
-                    <input type="checkbox" id="resource-<%= resource.id %>" name="resources" value="<%= resource.id %>">
-                    <label for="resource-<%= resource.id %>"><%= resource.name %></label>
-                </div>
-            <% }) %>
-        <% } else { %>
-            <p>No resources available.</p>
-        <% } %>
-        <button type="submit">Create</button>
+        <textarea id="description" name="description" class="form-control"></textarea>
+      </div>
+      <h2>Select Resources:</h2>
+      <% if (resources && resources.length > 0) { %>
+        <% resources.forEach(resource => { %>
+          <div class="form-check">
+            <input type="checkbox" id="resource-<%= resource.id %>" name="resources" value="<%= resource.id %>" class="form-check-input">
+            <label for="resource-<%= resource.id %>" class="form-check-label"><%= resource.name %></label>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p>No resources available.</p>
+      <% } %>
+      <button type="submit" class="btn btn-primary mt-3">Create</button>
     </form>
+  </div>
 </body>
 </html>
 

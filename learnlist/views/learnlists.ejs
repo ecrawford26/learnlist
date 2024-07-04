@@ -1,41 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Learnlists</title>
+  <link rel="stylesheet" href="/styles2.css">
 </head>
 <body>
-  <h1>Your Learnlists</h1>
-  <ul>
-    <% if (userLearnlists.length > 0) { %>
-      <% userLearnlists.forEach(learnlist => { %>
-        <li>
-          <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a>
-          (Rating: <%= learnlist.average_rating %> Stars)
-        </li>
-      <% }) %>
-    <% } else { %>
-      <li>No learnlists found.</li>
-    <% } %>
-  </ul>
-  <h1>All Learnlists</h1>
-  <ul>
-    <% if (allLearnlists.length > 0) { %>
-      <% allLearnlists.forEach(learnlist => { %>
-        <li>
-          <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a> by <%= learnlist.username %>
-          (Rating: <%= learnlist.average_rating %> Stars)
-          <% if (currentUser.id === learnlist.user_id) { %>
-            <a href="/learnlists/<%= learnlist.id %>/edit">Edit</a>
-            <form action="/learnlists/<%= learnlist.id %>/delete" method="post" style="display:inline;">
-              <button type="submit">Delete</button>
-            </form>
-          <% } %>
-        </li>
-      <% }) %>
-    <% } else { %>
-      <li>No learnlists found.</li>
-    <% } %>
-  </ul>
+  <div class="container">
+    <h1>Your Learnlists</h1>
+    <ul>
+      <% if (userLearnlists.length > 0) { %>
+        <% userLearnlists.forEach(learnlist => { %>
+          <li>
+            <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a>
+            (Rating: <%= learnlist.average_rating %> Stars)
+            <% if (currentUser.id === learnlist.user_id) { %>
+              <form action="/learnlists/<%= learnlist.id %>/delete" method="post">
+                <button type="submit">Delete</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      <% } else { %>
+        <li>No learnlists found.</li>
+      <% } %>
+    </ul>
+    <h1>All Learnlists</h1>
+    <ul>
+      <% if (allLearnlists.length > 0) { %>
+        <% allLearnlists.forEach(learnlist => { %>
+          <li>
+            <a href="/learnlists/<%= learnlist.id %>"><%= learnlist.name %></a> by <%= learnlist.username %>
+            (Rating: <%= learnlist.average_rating %> Stars)
+            <% if (currentUser.id === learnlist.user_id) { %>
+              <a href="/learnlists/<%= learnlist.id %>/edit">Edit</a>
+            <% } %>
+          </li>
+        <% }) %>
+      <% } else { %>
+        <li>No learnlists found.</li>
+      <% } %>
+    </ul>
+  </div>
 </body>
 </html>
 
