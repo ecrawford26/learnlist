@@ -8,7 +8,7 @@ const path = require("path");
 
 const app = express();
 
-// Configure middleware
+// middleware
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -22,7 +22,7 @@ app.use(
   })
 );
 
-// MySQL connection setup
+// connection setup
 const pool = mysql.createPool({
   connectionLimit: 10,
   host: process.env.DB_HOST,
@@ -32,7 +32,7 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT,
 });
 
-// Check MySQL connection
+// check connection
 pool.getConnection((err, connection) => {
   if (err) {
     console.error("Database connection failed: " + err.stack);
@@ -42,37 +42,37 @@ pool.getConnection((err, connection) => {
   connection.release();
 });
 
-// Middleware to check if user is authenticated
+// check if user is authenticated
 function isAuthenticated(req, res, next) {
-  console.log("Checking authentication for session: ", req.session); // Debugging line
+  console.log("Checking authentication for session: ", req.session); 
   if (req.session.user) {
-    console.log("User is authenticated: ", req.session.user); // Debugging line
-    return next(); // Proceed to the next middleware or route handler
+    console.log("User is authenticated: ", req.session.user); 
+    return next(); 
   }
-  console.log("User not authenticated, redirecting to /signin"); // Debugging line
-  res.redirect("/signin"); // Redirect to signin if not authenticated
+  console.log("User not authenticated, redirecting to /signin"); 
+  res.redirect("/signin"); // redirect to signin if not authenticated
 }
 
-// Index route
+// index route
 app.get("/", (req, res) => {
-  console.log("Index route, session: ", req.session); // Debugging line
+  console.log("Index route, session: ", req.session); 
   if (req.session.user) {
-    return res.redirect("/home"); // Redirect to home if authenticated
+    return res.redirect("/home"); // redirect to home if authenticated
   }
-  res.redirect("/signup"); // Redirect to signup if not authenticated
+  res.redirect("/signup"); // redirect to signup if not authenticated
 });
 
-// Signup page
+// signup page
 app.get("/signup", (req, res) => {
-  res.render("signup"); // Ensure you have signup.ejs in your views directory
+  res.render("signup");
 });
 
-// Signup form submission
+// signup form 
 app.post("/signup", async (req, res) => {
   const { username, password, email } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Check if username or email already exists
+  // check if username or email already exists
   pool.query(
     "SELECT * FROM users WHERE username = ? OR email = ?",
     [username, email],
@@ -93,7 +93,7 @@ app.post("/signup", async (req, res) => {
               console.error("Error inserting new user:", err);
               return res.status(500).render("error", { message: "Error inserting new user." });
             }
-            // After successful signup, redirect to signin
+            // successful signup redirect to signin
             res.redirect("/signin");
           }
         );
@@ -102,16 +102,16 @@ app.post("/signup", async (req, res) => {
   );
 });
 
-// Signin page
+// signin page
 app.get("/signin", (req, res) => {
-  res.render("signin"); // Ensure you have signin.ejs in your views directory
+  res.render("signin"); 
 });
 
-// Signin form submission
+// signin form submission
 app.post("/signin", async (req, res) => {
   const { username, password } = req.body;
 
-  // Fetch user from database
+  // fetch user from database
   pool.query(
     "SELECT * FROM users WHERE username = ?",
     [username],
@@ -126,7 +126,7 @@ app.post("/signin", async (req, res) => {
       }
 
       const user = results[0];
-      // Validate password
+      // validate password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         return res.render("signin", { error: "Incorrect password." });
@@ -138,30 +138,30 @@ app.post("/signin", async (req, res) => {
           console.error("Error saving session:", err);
           return res.status(500).render("error", { message: "Error saving session." });
         }
-        console.log("Session set: ", req.session.user); // Debugging line
+        console.log("Session set: ", req.session.user); 
         res.redirect("/home");
       });
     }
   );
 });
 
-// Home page (authenticated)
+// home page if authenticated
 app.get("/home", isAuthenticated, (req, res) => {
-  console.log("Home route, user in session: ", req.session.user); // Debugging line
+  console.log("Home route, user in session: ", req.session.user); 
   res.render("home", { user: req.session.user });
 });
 
-// Logout
+// logout
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session:", err);
     }
-    res.redirect("/signin"); // Redirect to signin after logout
+    res.redirect("/signin"); // redirect to signin
   });
 });
 
-// All content
+// all content
 app.get("/all-content", async (req, res) => {
   const { category, resource_type, search, sort } = req.query;
 
@@ -234,7 +234,7 @@ app.get("/all-content", async (req, res) => {
   }
 });
 
-// View all learnlists of a user
+// view all learnlists of a user
 app.get('/learnlists', isAuthenticated, (req, res) => {
   const userId = req.session.user.id;
   pool.query(
@@ -268,7 +268,7 @@ app.get('/learnlists', isAuthenticated, (req, res) => {
   );
 });
 
-// View form to create a new learnlist
+// view form to create a new learnlist
 app.get('/learnlists/new', isAuthenticated, async (req, res) => {
   try {
     const resources = await new Promise((resolve, reject) => {
@@ -284,7 +284,7 @@ app.get('/learnlists/new', isAuthenticated, async (req, res) => {
   }
 });
 
-// Handle form submission to create a new learnlist
+// form submission to create a new learnlist
 app.post('/learnlists', isAuthenticated, (req, res) => {
   const { name, description, resources } = req.body;
   const userId = req.session.user.id;
@@ -318,7 +318,7 @@ app.post('/learnlists', isAuthenticated, (req, res) => {
   );
 });
 
-// View a specific learnlist with rating form
+// specific learnlist with rating
 app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const userId = req.session.user.id;
@@ -381,7 +381,7 @@ app.get('/learnlists/:id', isAuthenticated, (req, res) => {
   );
 });
 
-// View form to edit a learnlist
+// edit a learnlist
 app.get('/learnlists/:id/edit', isAuthenticated, async (req, res) => {
   const learnlistId = req.params.id;
   try {
@@ -421,7 +421,7 @@ app.get('/learnlists/:id/edit', isAuthenticated, async (req, res) => {
   }
 });
 
-// Handle form submission to update a learnlist
+// update a learnlist
 app.post('/learnlists/:id', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const { name, description, resources } = req.body;
@@ -466,12 +466,12 @@ app.post('/learnlists/:id', isAuthenticated, (req, res) => {
   );
 });
 
-// Handle deletion of a learnlist
+// deletion of a learnlist
 app.post('/learnlists/:id/delete', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const userId = req.session.user.id;
   
-  // First, delete references in the user_favourites table
+  // delete references in the user_favourites table
   pool.query(
     'DELETE FROM user_favourites WHERE learnlist_id = ?',
     [learnlistId],
@@ -481,7 +481,7 @@ app.post('/learnlists/:id/delete', isAuthenticated, (req, res) => {
         return res.status(500).render('error', { message: 'Error deleting references in user_favourites.' });
       }
       
-      // Now, delete the learnlist
+      // delete the learnlist
       pool.query(
         'DELETE FROM user_learnlists WHERE id = ? AND user_id = ?',
         [learnlistId, userId],
@@ -499,7 +499,7 @@ app.post('/learnlists/:id/delete', isAuthenticated, (req, res) => {
 
 
 
-// Add a review for a learnlist
+// review for a learnlist
 app.post('/learnlists/:id/reviews', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const { rating } = req.body;
@@ -519,7 +519,7 @@ app.post('/learnlists/:id/reviews', isAuthenticated, (req, res) => {
 });
 
 
-// View all learnlists of all users
+// learnlists of all users
 app.get('/all-learnlists', isAuthenticated, (req, res) => {
   pool.query(
     `SELECT ul.*, u.username, COALESCE(AVG(r.rating), 0) AS average_rating
@@ -537,7 +537,7 @@ app.get('/all-learnlists', isAuthenticated, (req, res) => {
   );
 });
 
-// Route for displaying the form to create a new learnlist
+// displaying the form to create a new learnlist
 app.get("/learnlists/new", isAuthenticated, async (req, res) => {
   try {
     const resources = await new Promise((resolve, reject) => {
@@ -553,7 +553,7 @@ app.get("/learnlists/new", isAuthenticated, async (req, res) => {
   }
 });
 
-// Route for handling form submission to create a new learnlist
+// create a new learnlist
 app.post("/learnlists", isAuthenticated, (req, res) => {
   const { name, description, resources } = req.body;
   const userId = req.session.user.id;
@@ -587,7 +587,7 @@ app.post("/learnlists", isAuthenticated, (req, res) => {
   );
 });
 
-// Add a learnlist to favourites
+// learnlist to favourites
 app.post('/learnlists/:id/favourite', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const userId = req.session.user.id;
@@ -605,7 +605,7 @@ app.post('/learnlists/:id/favourite', isAuthenticated, (req, res) => {
   );
 });
 
-// Remove a learnlist from favourites
+// learnlist from favourites
 app.post('/learnlists/:id/unfavourite', isAuthenticated, (req, res) => {
   const learnlistId = req.params.id;
   const userId = req.session.user.id;
@@ -645,7 +645,7 @@ app.get('/favourites', isAuthenticated, (req, res) => {
   );
 });
 
-// Start server
+// start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}/all-content`);
